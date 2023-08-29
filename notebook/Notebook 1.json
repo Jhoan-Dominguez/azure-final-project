@@ -1,0 +1,185 @@
+{
+	"name": "Notebook 1",
+	"properties": {
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"bigDataPool": {
+			"referenceName": "SparkPool",
+			"type": "BigDataPoolReference"
+		},
+		"sessionProperties": {
+			"driverMemory": "28g",
+			"driverCores": 4,
+			"executorMemory": "28g",
+			"executorCores": 4,
+			"numExecutors": 2,
+			"conf": {
+				"spark.dynamicAllocation.enabled": "false",
+				"spark.dynamicAllocation.minExecutors": "2",
+				"spark.dynamicAllocation.maxExecutors": "2",
+				"spark.autotune.trackingId": "0dac1fa2-6e0b-40f3-99ae-6d6f3f0600de"
+			}
+		},
+		"metadata": {
+			"saveOutput": true,
+			"enableDebugMode": false,
+			"kernelspec": {
+				"name": "synapse_pyspark",
+				"display_name": "Synapse PySpark"
+			},
+			"language_info": {
+				"name": "python"
+			},
+			"a365ComputeOptions": {
+				"id": "/subscriptions/908ae34a-bafd-4e77-8f6e-c264bc94d94d/resourceGroups/rg_final_project/providers/Microsoft.Synapse/workspaces/rg-fp-synapse/bigDataPools/SparkPool",
+				"name": "SparkPool",
+				"type": "Spark",
+				"endpoint": "https://rg-fp-synapse.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/SparkPool",
+				"auth": {
+					"type": "AAD",
+					"authResource": "https://dev.azuresynapse.net"
+				},
+				"sparkVersion": "3.3",
+				"nodeCount": 6,
+				"cores": 4,
+				"memory": 28,
+				"automaticScaleJobs": false
+			},
+			"sessionKeepAliveTimeout": 30
+		},
+		"cells": [
+			{
+				"cell_type": "code",
+				"source": [
+					"from notebookutils import mssparkutils\r\n",
+					"import pyspark.sql.functions as F\r\n",
+					"\r\n",
+					"sourceLinkedService = \"ls_datalake_transform\"\r\n",
+					"spark.conf.set(f\"spark.storage.synapse.linkedServiceName\", sourceLinkedService)\r\n",
+					"spark.conf.set(f\"fs.azure.account.oauth.provider.type\", \"com.microsoft.azure.synapse.tokenlibrary.LinkedServiceBasedTokenProvider\")"
+				],
+				"execution_count": 10
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"def create_file(df, path=\"abfss://transformed@rgfpadatalake.dfs.core.windows.net/Amplificador/\"):\r\n",
+					"    df.write\\\r\n",
+					"        .mode(\"overwrite\")\\\r\n",
+					"        .format(\"parquet\")\\\r\n",
+					"        .option(\"header\", \"true\")\\\r\n",
+					"        .option(\"inferschema\", \"true\")\\\r\n",
+					"        .option(\"sep\", \"|\")\\\r\n",
+					"        .save(path)\r\n",
+					"\r\n",
+					"def delete_spaces(df, columns):\r\n",
+					"    \r\n",
+					"    for column in columns:\r\n",
+					"        df = df.withColumn(column, F.trim(column))\r\n",
+					"    \r\n",
+					"    return df\r\n",
+					"\r\n",
+					"\r\n",
+					"def clean_str_regrex(df, columns):\r\n",
+					"    \r\n",
+					"    for column in columns:\r\n",
+					"        df = df.withColumn(column, F.regexp_replace(column, \"^[0-9a-zA-ZñÑáéíóúüÁÉÍÓÚÜ.,/: ]\", \"\"))\r\n",
+					"    \r\n",
+					"    return df\r\n",
+					"\r\n",
+					"\r\n",
+					"def clean_num_columns(df, columns):\r\n",
+					"    \r\n",
+					"    for column in columns:\r\n",
+					"        df = df.withColumn(column, F.regexp_replace(column, \"^[0-9.,]\", \"\"))\r\n",
+					"    \r\n",
+					"    return df"
+				],
+				"execution_count": 11
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"DF_FIRST_INPUT = spark.read.format(\"csv\").option(\"header\", \"true\")\\\r\n",
+					"        .option(\"inferSchema\", \"true\").option(\"delimiter\", \"|\").option(\"encoding\", \"utf-8\")\\\r\n",
+					"        .load(\"abfss://raw@rgfpadatalake.dfs.core.windows.net/ingest/first_input/\")\r\n",
+					"\r\n",
+					"DF_SECOND_INPUT = spark.read.format(\"csv\").option(\"header\", \"true\")\\\r\n",
+					"        .option(\"inferSchema\", \"true\").option(\"delimiter\", \"|\").option(\"encoding\", \"utf-8\")\\\r\n",
+					"        .load(\"abfss://raw@rgfpadatalake.dfs.core.windows.net/ingest/second_input/\")"
+				],
+				"execution_count": 12
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"DF_FIRST_INPUT = delete_spaces(DF_FIRST_INPUT, DF_FIRST_INPUT.columns)\r\n",
+					"DF_FIRST_INPUT = clean_str_regrex(DF_FIRST_INPUT, [\"fr_publishing_area\",\"fr_final_campaign_name\"])\r\n",
+					"\r\n",
+					"\r\n",
+					"DF_SECOND_INPUT = delete_spaces(DF_SECOND_INPUT, DF_SECOND_INPUT.columns)\r\n",
+					"DF_SECOND_INPUT = clean_str_regrex(DF_SECOND_INPUT, [\"sc_status\",\"sc_final_campaign_name\"])\r\n",
+					"DF_SECOND_INPUT = clean_num_columns(DF_SECOND_INPUT, [\"sc_shareds\",\"sc_potential_reach\",\"sc_estimated_range\",\"sc_total_engagement\",\"sc_rate_engagement\",\"sc_clicks_in_url_bitly\",\"sc_valorization\"])"
+				],
+				"execution_count": 13
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"jupyter": {
+						"source_hidden": false,
+						"outputs_hidden": false
+					},
+					"nteract": {
+						"transient": {
+							"deleting": false
+						}
+					}
+				},
+				"source": [
+					"FINAL_DF = DF_FIRST_INPUT.join(DF_SECOND_INPUT, \r\n",
+					"                    DF_FIRST_INPUT.fr_final_campaign_name == DF_SECOND_INPUT.sc_final_campaign_name, \r\n",
+					"                    \"inner\")\r\n",
+					"FINAL_DF = FINAL_DF.select(\"fr_start_date\", \"fr_publishing_area\", \"fr_final_campaign_name\", \"sc_shareds\",\"sc_potential_reach\",\"sc_estimated_range\", \r\n",
+					"                           \"sc_total_engagement\",\"sc_rate_engagement\",\"sc_clicks_in_url_bitly\",\"sc_valorization\")\r\n",
+					"\r\n",
+					"create_file(FINAL_DF)"
+				],
+				"execution_count": 14
+			}
+		]
+	}
+}
