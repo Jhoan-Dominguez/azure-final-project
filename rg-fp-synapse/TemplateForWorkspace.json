@@ -1,0 +1,851 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"workspaceName": {
+			"type": "string",
+			"metadata": "Workspace name",
+			"defaultValue": "rg-fp-synapse"
+		},
+		"rg-fp-synapse-WorkspaceDefaultSqlServer_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'rg-fp-synapse-WorkspaceDefaultSqlServer'",
+			"defaultValue": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=tcp:rg-fp-synapse.sql.azuresynapse.net,1433;Initial Catalog=@{linkedService().DBName}"
+		},
+		"ls_adls_ingest_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://rgfpadatalake.dfs.core.windows.net"
+		},
+		"ls_datalake_transform_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://rgfpadatalake.dfs.core.windows.net/"
+		},
+		"ls_fp_github_properties_typeProperties_username": {
+			"type": "string",
+			"defaultValue": "jhoandominguezu@gmail.com"
+		},
+		"ls_keyvalue_properties_typeProperties_baseUrl": {
+			"type": "string",
+			"defaultValue": "https://fpKeyVault.vault.azure.net/"
+		},
+		"ls_onpremise_properties_typeProperties_host": {
+			"type": "string",
+			"defaultValue": "C:\\Data\\"
+		},
+		"ls_onpremise_properties_typeProperties_userId": {
+			"type": "string",
+			"defaultValue": "jhoancamilo-22@hotmail.com"
+		},
+		"rg-fp-synapse-WorkspaceDefaultStorage_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://fpsynapsestorage.dfs.core.windows.net"
+		}
+	},
+	"variables": {
+		"workspaceId": "[concat('Microsoft.Synapse/workspaces/', parameters('workspaceName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('workspaceName'), '/ls_onpremise_to_datalake')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "Copy data1",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "FileServerReadSettings",
+									"recursive": true,
+									"wildcardFileName": "*.csv",
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "DelimitedTextSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextWriteSettings",
+									"quoteAllText": true,
+									"fileExtension": ".csv"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "first_input",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "ds_ingest_first_input",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "Copy data2",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "FileServerReadSettings",
+									"recursive": true,
+									"wildcardFileName": "*.csv",
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "DelimitedTextSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextWriteSettings",
+									"quoteAllText": true,
+									"fileExtension": ".csv"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "second_input",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "ds_ingest_second_input",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2023-08-29T08:06:54Z"
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/datasets/first_input')]",
+				"[concat(variables('workspaceId'), '/datasets/ds_ingest_first_input')]",
+				"[concat(variables('workspaceId'), '/datasets/second_input')]",
+				"[concat(variables('workspaceId'), '/datasets/ds_ingest_second_input')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/ds_ingest_first_input')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ls_adls_ingest",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": "ingest/first_input",
+						"fileSystem": "raw"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/ls_adls_ingest')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/ds_ingest_second_input')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ls_adls_ingest",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": "ingest/second_input",
+						"fileSystem": "raw"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/ls_adls_ingest')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/first_input')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ls_onpremise",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "FileServerLocation",
+						"fileName": "first_input.csv",
+						"folderPath": "first_input"
+					},
+					"columnDelimiter": ",",
+					"encodingName": "utf-8",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "Date (GMT)",
+						"type": "String"
+					},
+					{
+						"name": "�rea publicadora",
+						"type": "String"
+					},
+					{
+						"name": "Nombre campa�a final",
+						"type": "String"
+					},
+					{
+						"name": "Post Message",
+						"type": "String"
+					},
+					{
+						"name": "Alcance potencial",
+						"type": "String"
+					},
+					{
+						"name": "Alcance estimado",
+						"type": "String"
+					},
+					{
+						"name": "Clicks",
+						"type": "String"
+					},
+					{
+						"name": "Compartidos",
+						"type": "String"
+					},
+					{
+						"name": "Engagement",
+						"type": "String"
+					},
+					{
+						"name": "Porcentaje de Engagement",
+						"type": "String"
+					},
+					{
+						"name": "Valorizaci�n",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/ls_onpremise')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/second_input')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ls_onpremise",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "FileServerLocation",
+						"fileName": "second_input.csv",
+						"folderPath": "second_input"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "Estado",
+						"type": "String"
+					},
+					{
+						"name": "Nombre =  Nombre campa�a final",
+						"type": "String"
+					},
+					{
+						"name": "Fecha de Inicio",
+						"type": "String"
+					},
+					{
+						"name": "Fecha de Finalizaci�n",
+						"type": "String"
+					},
+					{
+						"name": "Invitados",
+						"type": "String"
+					},
+					{
+						"name": "Numero de registrados",
+						"type": "String"
+					},
+					{
+						"name": "Personas con redes conectadas",
+						"type": "String"
+					},
+					{
+						"name": "Participantes",
+						"type": "String"
+					},
+					{
+						"name": "N�mero de publicaciones=compartidos (8)",
+						"type": "String"
+					},
+					{
+						"name": "Participaci�n Facebook",
+						"type": "String"
+					},
+					{
+						"name": "Participaci�n Twitter",
+						"type": "String"
+					},
+					{
+						"name": "Participaci�n LinkedIn",
+						"type": "String"
+					},
+					{
+						"name": "Participaci�n Instagram",
+						"type": "String"
+					},
+					{
+						"name": "Participaci�n WhatsApp",
+						"type": "String"
+					},
+					{
+						"name": "Alcance potencial (5)",
+						"type": "String"
+					},
+					{
+						"name": "Alcance estimado (6)",
+						"type": "String"
+					},
+					{
+						"name": "Engagement Facebook",
+						"type": "String"
+					},
+					{
+						"name": "Engagement Twitter",
+						"type": "String"
+					},
+					{
+						"name": "Engagement Linkedin",
+						"type": "String"
+					},
+					{
+						"name": "Engagements Total (9)",
+						"type": "String"
+					},
+					{
+						"name": "Engagement Rate (10)",
+						"type": "String"
+					},
+					{
+						"name": "Clics en url Bitly (7)",
+						"type": "String"
+					},
+					{
+						"name": "Valorizaci�n (11)",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/ls_onpremise')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/ls_adls_ingest')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('ls_adls_ingest_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "AzureKeyVaultSecret",
+						"store": {
+							"referenceName": "ls_keyvalue",
+							"type": "LinkedServiceReference"
+						},
+						"secretName": "fp-datalake-accountkey"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/ls_keyvalue')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/ls_datalake_transform')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('ls_datalake_transform_properties_typeProperties_url')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/ls_fp_github')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "GitHub",
+				"typeProperties": {
+					"username": "[parameters('ls_fp_github_properties_typeProperties_username')]",
+					"credential": {
+						"type": "AzureKeyVaultSecret",
+						"store": {
+							"referenceName": "ls_keyvalue",
+							"type": "LinkedServiceReference"
+						},
+						"secretName": "github-password"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/ls_keyvalue')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/ls_keyvalue')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureKeyVault",
+				"typeProperties": {
+					"baseUrl": "[parameters('ls_keyvalue_properties_typeProperties_baseUrl')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/ls_onpremise')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "FileServer",
+				"typeProperties": {
+					"host": "[parameters('ls_onpremise_properties_typeProperties_host')]",
+					"userId": "[parameters('ls_onpremise_properties_typeProperties_userId')]",
+					"password": {
+						"type": "AzureKeyVaultSecret",
+						"store": {
+							"referenceName": "ls_keyvalue",
+							"type": "LinkedServiceReference"
+						},
+						"secretName": "on-premise-password"
+					}
+				},
+				"connectVia": {
+					"referenceName": "ir-localmachine",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/ir-localmachine')]",
+				"[concat(variables('workspaceId'), '/linkedServices/ls_keyvalue')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/rg-fp-synapse-WorkspaceDefaultSqlServer')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"parameters": {
+					"DBName": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlDW",
+				"typeProperties": {
+					"connectionString": "[parameters('rg-fp-synapse-WorkspaceDefaultSqlServer_connectionString')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/rg-fp-synapse-WorkspaceDefaultStorage')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('rg-fp-synapse-WorkspaceDefaultStorage_properties_typeProperties_url')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/AutoResolveIntegrationRuntime')]",
+			"type": "Microsoft.Synapse/workspaces/integrationRuntimes",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "Managed",
+				"typeProperties": {
+					"computeProperties": {
+						"location": "AutoResolve",
+						"dataFlowProperties": {
+							"computeType": "General",
+							"coreCount": 8,
+							"timeToLive": 0
+						}
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/ir-localmachine')]",
+			"type": "Microsoft.Synapse/workspaces/integrationRuntimes",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "SelfHosted",
+				"typeProperties": {}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/WorkspaceSystemIdentity')]",
+			"type": "Microsoft.Synapse/workspaces/credentials",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "ManagedIdentity",
+				"typeProperties": {}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Notebook 1')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"bigDataPool": {
+					"referenceName": "SparkPool",
+					"type": "BigDataPoolReference"
+				},
+				"sessionProperties": {
+					"driverMemory": "28g",
+					"driverCores": 4,
+					"executorMemory": "28g",
+					"executorCores": 4,
+					"numExecutors": 2,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "false",
+						"spark.dynamicAllocation.minExecutors": "2",
+						"spark.dynamicAllocation.maxExecutors": "2",
+						"spark.autotune.trackingId": "2ff09981-bd51-4039-9e01-8eec63700642"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"enableDebugMode": false,
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "Synapse PySpark"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"a365ComputeOptions": {
+						"id": "/subscriptions/908ae34a-bafd-4e77-8f6e-c264bc94d94d/resourceGroups/rg_final_project/providers/Microsoft.Synapse/workspaces/rg-fp-synapse/bigDataPools/SparkPool",
+						"name": "SparkPool",
+						"type": "Spark",
+						"endpoint": "https://rg-fp-synapse.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/SparkPool",
+						"auth": {
+							"type": "AAD",
+							"authResource": "https://dev.azuresynapse.net"
+						},
+						"sparkVersion": "3.3",
+						"nodeCount": 6,
+						"cores": 4,
+						"memory": 28,
+						"automaticScaleJobs": false
+					},
+					"sessionKeepAliveTimeout": 30
+				},
+				"cells": [
+					{
+						"cell_type": "code",
+						"metadata": {},
+						"source": [
+							"from notebookutils import mssparkutils\r\n",
+							"import pyspark.sql.functions as F\r\n",
+							"\r\n",
+							"sourceLinkedService = \"ls_datalake_transform\"\r\n",
+							"spark.conf.set(f\"spark.storage.synapse.linkedServiceName\", sourceLinkedService)\r\n",
+							"spark.conf.set(f\"fs.azure.account.oauth.provider.type\", \"com.microsoft.azure.synapse.tokenlibrary.LinkedServiceBasedTokenProvider\")"
+						],
+						"outputs": [],
+						"execution_count": 10
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"def create_file(df, path=\"abfss://transformed@rgfpadatalake.dfs.core.windows.net/Amplificador/\"):\r\n",
+							"    df.write\\\r\n",
+							"        .mode(\"overwrite\")\\\r\n",
+							"        .format(\"parquet\")\\\r\n",
+							"        .option(\"header\", \"true\")\\\r\n",
+							"        .option(\"inferschema\", \"true\")\\\r\n",
+							"        .option(\"sep\", \"|\")\\\r\n",
+							"        .save(path)\r\n",
+							"\r\n",
+							"def delete_spaces(df, columns):\r\n",
+							"    \r\n",
+							"    for column in columns:\r\n",
+							"        df = df.withColumn(column, F.trim(column))\r\n",
+							"    \r\n",
+							"    return df\r\n",
+							"\r\n",
+							"\r\n",
+							"def clean_str_regrex(df, columns):\r\n",
+							"    \r\n",
+							"    for column in columns:\r\n",
+							"        df = df.withColumn(column, F.regexp_replace(column, \"^[0-9a-zA-ZñÑáéíóúüÁÉÍÓÚÜ.,/: ]\", \"\"))\r\n",
+							"    \r\n",
+							"    return df\r\n",
+							"\r\n",
+							"\r\n",
+							"def clean_num_columns(df, columns):\r\n",
+							"    \r\n",
+							"    for column in columns:\r\n",
+							"        df = df.withColumn(column, F.regexp_replace(column, \"^[0-9.,]\", \"\"))\r\n",
+							"    \r\n",
+							"    return df"
+						],
+						"outputs": [],
+						"execution_count": 11
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"DF_FIRST_INPUT = spark.read.format(\"csv\").option(\"header\", \"true\")\\\r\n",
+							"        .option(\"inferSchema\", \"true\").option(\"delimiter\", \"|\").option(\"encoding\", \"utf-8\")\\\r\n",
+							"        .load(\"abfss://raw@rgfpadatalake.dfs.core.windows.net/ingest/first_input/\")\r\n",
+							"\r\n",
+							"DF_SECOND_INPUT = spark.read.format(\"csv\").option(\"header\", \"true\")\\\r\n",
+							"        .option(\"inferSchema\", \"true\").option(\"delimiter\", \"|\").option(\"encoding\", \"utf-8\")\\\r\n",
+							"        .load(\"abfss://raw@rgfpadatalake.dfs.core.windows.net/ingest/second_input/\")"
+						],
+						"outputs": [],
+						"execution_count": 12
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"DF_FIRST_INPUT = delete_spaces(DF_FIRST_INPUT, DF_FIRST_INPUT.columns)\r\n",
+							"DF_FIRST_INPUT = clean_str_regrex(DF_FIRST_INPUT, [\"fr_publishing_area\",\"fr_final_campaign_name\"])\r\n",
+							"\r\n",
+							"\r\n",
+							"DF_SECOND_INPUT = delete_spaces(DF_SECOND_INPUT, DF_SECOND_INPUT.columns)\r\n",
+							"DF_SECOND_INPUT = clean_str_regrex(DF_SECOND_INPUT, [\"sc_status\",\"sc_final_campaign_name\"])\r\n",
+							"DF_SECOND_INPUT = clean_num_columns(DF_SECOND_INPUT, [\"sc_shareds\",\"sc_potential_reach\",\"sc_estimated_range\",\"sc_total_engagement\",\"sc_rate_engagement\",\"sc_clicks_in_url_bitly\",\"sc_valorization\"])"
+						],
+						"outputs": [],
+						"execution_count": 13
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							}
+						},
+						"source": [
+							"FINAL_DF = DF_FIRST_INPUT.join(DF_SECOND_INPUT, \r\n",
+							"                    DF_FIRST_INPUT.fr_final_campaign_name == DF_SECOND_INPUT.sc_final_campaign_name, \r\n",
+							"                    \"inner\")\r\n",
+							"FINAL_DF = FINAL_DF.select(\"fr_start_date\", \"fr_publishing_area\", \"fr_final_campaign_name\", \"sc_shareds\",\"sc_potential_reach\",\"sc_estimated_range\", \r\n",
+							"                           \"sc_total_engagement\",\"sc_rate_engagement\",\"sc_clicks_in_url_bitly\",\"sc_valorization\")\r\n",
+							"\r\n",
+							"create_file(FINAL_DF)"
+						],
+						"outputs": [],
+						"execution_count": 14
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SparkPool')]",
+			"type": "Microsoft.Synapse/workspaces/bigDataPools",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"autoPause": {
+					"enabled": true,
+					"delayInMinutes": 15
+				},
+				"autoScale": {
+					"enabled": true,
+					"maxNodeCount": 6,
+					"minNodeCount": 3
+				},
+				"nodeCount": 6,
+				"nodeSize": "Small",
+				"nodeSizeFamily": "MemoryOptimized",
+				"sparkVersion": "3.3",
+				"isComputeIsolationEnabled": false,
+				"sessionLevelPackagesEnabled": false,
+				"annotations": []
+			},
+			"dependsOn": [],
+			"location": "northeurope"
+		}
+	]
+}
