@@ -13,7 +13,7 @@
 				"fileName": "first_input.csv",
 				"folderPath": "first_input"
 			},
-			"columnDelimiter": ",",
+			"columnDelimiter": "|",
 			"encodingName": "utf-8",
 			"escapeChar": "\\",
 			"firstRowAsHeader": true,

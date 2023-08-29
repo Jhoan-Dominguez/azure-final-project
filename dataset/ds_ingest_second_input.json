@@ -13,7 +13,7 @@
 				"folderPath": "ingest/second_input",
 				"fileSystem": "raw"
 			},
-			"columnDelimiter": ",",
+			"columnDelimiter": "|",
 			"escapeChar": "\\",
 			"firstRowAsHeader": true,
 			"quoteChar": "\""
