@@ -1,0 +1,19 @@
+{
+	"name": "ls_adls_ingest",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "AzureBlobFS",
+		"typeProperties": {
+			"url": "https://rgfpadatalake.dfs.core.windows.net",
+			"accountKey": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "ls_keyvalue",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": "fp-datalake-accountkey"
+			}
+		}
+	}
+}

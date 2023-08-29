@@ -1,0 +1,117 @@
+{
+	"name": "second_input",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_onpremise",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "FileServerLocation",
+				"fileName": "second_input.csv",
+				"folderPath": "second_input"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": [
+			{
+				"name": "Estado",
+				"type": "String"
+			},
+			{
+				"name": "Nombre =  Nombre campa�a final",
+				"type": "String"
+			},
+			{
+				"name": "Fecha de Inicio",
+				"type": "String"
+			},
+			{
+				"name": "Fecha de Finalizaci�n",
+				"type": "String"
+			},
+			{
+				"name": "Invitados",
+				"type": "String"
+			},
+			{
+				"name": "Numero de registrados",
+				"type": "String"
+			},
+			{
+				"name": "Personas con redes conectadas",
+				"type": "String"
+			},
+			{
+				"name": "Participantes",
+				"type": "String"
+			},
+			{
+				"name": "N�mero de publicaciones=compartidos (8)",
+				"type": "String"
+			},
+			{
+				"name": "Participaci�n Facebook",
+				"type": "String"
+			},
+			{
+				"name": "Participaci�n Twitter",
+				"type": "String"
+			},
+			{
+				"name": "Participaci�n LinkedIn",
+				"type": "String"
+			},
+			{
+				"name": "Participaci�n Instagram",
+				"type": "String"
+			},
+			{
+				"name": "Participaci�n WhatsApp",
+				"type": "String"
+			},
+			{
+				"name": "Alcance potencial (5)",
+				"type": "String"
+			},
+			{
+				"name": "Alcance estimado (6)",
+				"type": "String"
+			},
+			{
+				"name": "Engagement Facebook",
+				"type": "String"
+			},
+			{
+				"name": "Engagement Twitter",
+				"type": "String"
+			},
+			{
+				"name": "Engagement Linkedin",
+				"type": "String"
+			},
+			{
+				"name": "Engagements Total (9)",
+				"type": "String"
+			},
+			{
+				"name": "Engagement Rate (10)",
+				"type": "String"
+			},
+			{
+				"name": "Clics en url Bitly (7)",
+				"type": "String"
+			},
+			{
+				"name": "Valorizaci�n (11)",
+				"type": "String"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

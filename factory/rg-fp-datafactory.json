@@ -1,0 +1,9 @@
+{
+	"name": "rg-fp-datafactory",
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "937fc088-5767-4e8d-94bf-7b167be68742",
+		"tenantId": "0ac148b8-b47a-4719-83f0-0dcac0ec5169"
+	}
+}

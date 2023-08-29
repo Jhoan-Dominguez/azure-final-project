@@ -1,0 +1,70 @@
+{
+	"name": "first_input",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_onpremise",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "FileServerLocation",
+				"fileName": "first_input.csv",
+				"folderPath": "first_input"
+			},
+			"columnDelimiter": ",",
+			"encodingName": "utf-8",
+			"escapeChar": "\\",
+			"firstRowAsHeader": true,
+			"quoteChar": "\""
+		},
+		"schema": [
+			{
+				"name": "Date (GMT)",
+				"type": "String"
+			},
+			{
+				"name": "�rea publicadora",
+				"type": "String"
+			},
+			{
+				"name": "Nombre campa�a final",
+				"type": "String"
+			},
+			{
+				"name": "Post Message",
+				"type": "String"
+			},
+			{
+				"name": "Alcance potencial",
+				"type": "String"
+			},
+			{
+				"name": "Alcance estimado",
+				"type": "String"
+			},
+			{
+				"name": "Clicks",
+				"type": "String"
+			},
+			{
+				"name": "Compartidos",
+				"type": "String"
+			},
+			{
+				"name": "Engagement",
+				"type": "String"
+			},
+			{
+				"name": "Porcentaje de Engagement",
+				"type": "String"
+			},
+			{
+				"name": "Valorizaci�n",
+				"type": "String"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

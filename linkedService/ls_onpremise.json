@@ -1,0 +1,24 @@
+{
+	"name": "ls_onpremise",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "FileServer",
+		"typeProperties": {
+			"host": "C:\\Data\\",
+			"userId": "jhoancamilo-22@hotmail.com",
+			"password": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "ls_keyvalue",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": "on-premise-password"
+			}
+		},
+		"connectVia": {
+			"referenceName": "ir-localmachine",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

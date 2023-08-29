@@ -1,0 +1,19 @@
+{
+	"name": "ls_fp_github",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "GitHub",
+		"typeProperties": {
+			"username": "jhoandominguezu@gmail.com",
+			"credential": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "ls_keyvalue",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": "github-password"
+			}
+		}
+	}
+}
