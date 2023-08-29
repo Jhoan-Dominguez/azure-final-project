@@ -1,0 +1,30 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "rg-fp-datafactory"
+		},
+		"ls_adls_ingest_properties_typeProperties_url": {
+			"value": "https://rgfpadatalake.dfs.core.windows.net"
+		},
+		"ls_fp_github_properties_typeProperties_username": {
+			"value": "jhoandominguezu@gmail.com"
+		},
+		"ls_keyvalue_properties_typeProperties_baseUrl": {
+			"value": "https://fpKeyVault.vault.azure.net/"
+		},
+		"ls_onpremise_properties_typeProperties_host": {
+			"value": "C:\\Data\\"
+		},
+		"ls_onpremise_properties_typeProperties_userId": {
+			"value": "jhoancamilo-22@hotmail.com"
+		},
+		"containerUri": {
+			"value": ""
+		},
+		"containerSasToken": {
+			"value": ""
+		}
+	}
+}

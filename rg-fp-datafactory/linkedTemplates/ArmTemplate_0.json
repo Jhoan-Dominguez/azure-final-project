@@ -1,0 +1,528 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "rg-fp-datafactory"
+		},
+		"ls_keyvalue_properties_typeProperties_baseUrl": {
+			"type": "string",
+			"defaultValue": "https://fpKeyVault.vault.azure.net/"
+		},
+		"ls_adls_ingest_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://rgfpadatalake.dfs.core.windows.net"
+		},
+		"ls_fp_github_properties_typeProperties_username": {
+			"type": "string",
+			"defaultValue": "jhoandominguezu@gmail.com"
+		},
+		"ls_onpremise_properties_typeProperties_host": {
+			"type": "string",
+			"defaultValue": "C:\\Data\\"
+		},
+		"ls_onpremise_properties_typeProperties_userId": {
+			"type": "string",
+			"defaultValue": "jhoancamilo-22@hotmail.com"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/ls_keyvalue')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureKeyVault",
+				"typeProperties": {
+					"baseUrl": "[parameters('ls_keyvalue_properties_typeProperties_baseUrl')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ir-localmachine')]",
+			"type": "Microsoft.DataFactory/factories/integrationRuntimes",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "SelfHosted",
+				"typeProperties": {}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ls_adls_ingest')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('ls_adls_ingest_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "AzureKeyVaultSecret",
+						"store": {
+							"referenceName": "ls_keyvalue",
+							"type": "LinkedServiceReference"
+						},
+						"secretName": "fp-datalake-accountkey"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_keyvalue')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ls_fp_github')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "GitHub",
+				"typeProperties": {
+					"username": "[parameters('ls_fp_github_properties_typeProperties_username')]",
+					"credential": {
+						"type": "AzureKeyVaultSecret",
+						"store": {
+							"referenceName": "ls_keyvalue",
+							"type": "LinkedServiceReference"
+						},
+						"secretName": "github-password"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_keyvalue')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ls_onpremise')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "FileServer",
+				"typeProperties": {
+					"host": "[parameters('ls_onpremise_properties_typeProperties_host')]",
+					"userId": "[parameters('ls_onpremise_properties_typeProperties_userId')]",
+					"password": {
+						"type": "AzureKeyVaultSecret",
+						"store": {
+							"referenceName": "ls_keyvalue",
+							"type": "LinkedServiceReference"
+						},
+						"secretName": "on-premise-password"
+					}
+				},
+				"connectVia": {
+					"referenceName": "ir-localmachine",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/integrationRuntimes/ir-localmachine')]",
+				"[concat(variables('factoryId'), '/linkedServices/ls_keyvalue')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_ingest_first_input')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ls_adls_ingest",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": "ingest/first_input",
+						"fileSystem": "raw"
+					},
+					"columnDelimiter": "|",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_adls_ingest')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ds_ingest_second_input')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ls_adls_ingest",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": "ingest/second_input",
+						"fileSystem": "raw"
+					},
+					"columnDelimiter": "|",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_adls_ingest')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/first_input')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ls_onpremise",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "FileServerLocation",
+						"fileName": "first_input.csv",
+						"folderPath": "first_input"
+					},
+					"columnDelimiter": "|",
+					"encodingName": "utf-8",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "Date (GMT)",
+						"type": "String"
+					},
+					{
+						"name": "�rea publicadora",
+						"type": "String"
+					},
+					{
+						"name": "Nombre campa�a final",
+						"type": "String"
+					},
+					{
+						"name": "Post Message",
+						"type": "String"
+					},
+					{
+						"name": "Alcance potencial",
+						"type": "String"
+					},
+					{
+						"name": "Alcance estimado",
+						"type": "String"
+					},
+					{
+						"name": "Clicks",
+						"type": "String"
+					},
+					{
+						"name": "Compartidos",
+						"type": "String"
+					},
+					{
+						"name": "Engagement",
+						"type": "String"
+					},
+					{
+						"name": "Porcentaje de Engagement",
+						"type": "String"
+					},
+					{
+						"name": "Valorizaci�n",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_onpremise')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/second_input')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "ls_onpremise",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "FileServerLocation",
+						"fileName": "second_input.csv",
+						"folderPath": "second_input"
+					},
+					"columnDelimiter": "|",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "Estado",
+						"type": "String"
+					},
+					{
+						"name": "Nombre =  Nombre campa�a final",
+						"type": "String"
+					},
+					{
+						"name": "Fecha de Inicio",
+						"type": "String"
+					},
+					{
+						"name": "Fecha de Finalizaci�n",
+						"type": "String"
+					},
+					{
+						"name": "Invitados",
+						"type": "String"
+					},
+					{
+						"name": "Numero de registrados",
+						"type": "String"
+					},
+					{
+						"name": "Personas con redes conectadas",
+						"type": "String"
+					},
+					{
+						"name": "Participantes",
+						"type": "String"
+					},
+					{
+						"name": "N�mero de publicaciones=compartidos (8)",
+						"type": "String"
+					},
+					{
+						"name": "Participaci�n Facebook",
+						"type": "String"
+					},
+					{
+						"name": "Participaci�n Twitter",
+						"type": "String"
+					},
+					{
+						"name": "Participaci�n LinkedIn",
+						"type": "String"
+					},
+					{
+						"name": "Participaci�n Instagram",
+						"type": "String"
+					},
+					{
+						"name": "Participaci�n WhatsApp",
+						"type": "String"
+					},
+					{
+						"name": "Alcance potencial (5)",
+						"type": "String"
+					},
+					{
+						"name": "Alcance estimado (6)",
+						"type": "String"
+					},
+					{
+						"name": "Engagement Facebook",
+						"type": "String"
+					},
+					{
+						"name": "Engagement Twitter",
+						"type": "String"
+					},
+					{
+						"name": "Engagement Linkedin",
+						"type": "String"
+					},
+					{
+						"name": "Engagements Total (9)",
+						"type": "String"
+					},
+					{
+						"name": "Engagement Rate (10)",
+						"type": "String"
+					},
+					{
+						"name": "Clics en url Bitly (7)",
+						"type": "String"
+					},
+					{
+						"name": "Valorizaci�n (11)",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/ls_onpremise')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/ls_onpremise_to_datalake')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Copy data1",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "FileServerReadSettings",
+									"recursive": true,
+									"wildcardFileName": "*.csv",
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "DelimitedTextSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextWriteSettings",
+									"quoteAllText": true,
+									"fileExtension": ".csv"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "first_input",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "ds_ingest_first_input",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "Copy data2",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "FileServerReadSettings",
+									"recursive": true,
+									"wildcardFileName": "*.csv",
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "DelimitedTextSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextWriteSettings",
+									"quoteAllText": true,
+									"fileExtension": ".csv"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "second_input",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "ds_ingest_second_input",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2023-08-29T08:06:54Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/first_input')]",
+				"[concat(variables('factoryId'), '/datasets/ds_ingest_first_input')]",
+				"[concat(variables('factoryId'), '/datasets/second_input')]",
+				"[concat(variables('factoryId'), '/datasets/ds_ingest_second_input')]"
+			]
+		}
+	]
+}
